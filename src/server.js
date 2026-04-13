@@ -33,10 +33,12 @@ function loadMockData() {
 }
 
 async function queryOllama(userMessage) {
+  const OLLAMA_URL = process.env.OLLAMA_URL;
+  
   // Check if OLLAMA_URL is set for local development
-  if (!process.env.OLLAMA_URL || process.env.OLLAMA_URL === 'http://localhost:11434') {
+  if (!OLLAMA_URL || OLLAMA_URL === 'http://localhost:11434') {
     console.log('No Ollama configured - using demo mode');
-    return "I'm running! To connect me to a real AI, configure OLLAMA_URL environment variable on Render.";
+    return "I'm running in demo mode! Waiting for AI configuration.";
   }
   
   const systemPrompt = `You are a QA Agent assistant for a software development team.
