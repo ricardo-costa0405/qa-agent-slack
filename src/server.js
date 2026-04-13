@@ -60,20 +60,34 @@ Instructions:
     const requestBody = {
       model: OLLAMA_MODEL,
       prompt: `System: ${systemPrompt}\n\nUser: ${userMessage}\n\nAssistant:`,
-      stream: false
+      stream: false,
+      options: {
+        temperature: 0.7
+      }
     };
     
-    console.log('Calling Ollama:', OLLAMA_URL, 'with model:', OLLAMA_MODEL);
+    console.log('Calling Ollama:', OLLAMA_URL);
     
     const response = await axios.post(`${OLLAMA_URL}/api/generate`, requestBody, {
-      timeout: 180000
+      timeout: 180000,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (compatible; QA-Agent/1.0)'
+      },
+      validateStatus: () => true
     });
 
-    console.log('Ollama response keys:', Object.keys(response.data || {}));
+    if (response.status !== 200) {
+      console.error('Ollama error:', response.status, response.data);
+      return "AI temporarily unavailable. Please try again.";
+    }
+    
+    console.log('Ollama response received');
     
     return response.data?.response || response.data?.message?.content || "Got empty response from AI";
   } catch (err) {
-    console.error('Ollama error:', err.message, err.response?.data);
+    console.error('Ollama error:', err.message);
     throw new Error('Failed to get response from AI');
   }
 }
