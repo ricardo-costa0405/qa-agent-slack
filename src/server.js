@@ -11,10 +11,14 @@ const __dirname = dirname(__filename);
 const app = express();
 app.use(express.json());
 
-const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen3:8b';
 const PORT = process.env.PORT || 3000;
 const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN;
+
+// AI Configuration
+const OLLAMA_URL = process.env.OLLAMA_URL;
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen3:8b';
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY;
 
 let mockJiraData = { issues: [] };
 let mockConfluenceData = { pages: [] };
@@ -32,15 +36,7 @@ function loadMockData() {
   }
 }
 
-async function queryOllama(userMessage) {
-  const OLLAMA_URL = process.env.OLLAMA_URL;
-  
-  // Check if OLLAMA_URL is set for local development
-  if (!OLLAMA_URL || OLLAMA_URL === 'http://localhost:11434') {
-    console.log('No Ollama configured - using demo mode');
-    return "I'm running in demo mode! Waiting for AI configuration.";
-  }
-  
+async function queryAI(userMessage) {
   const systemPrompt = `You are a QA Agent assistant for a software development team.
 You have access to the following data sources:
 
@@ -56,51 +52,90 @@ Instructions:
 - Be concise and helpful
 - Reference issue keys (QA-XXX) when relevant`;
 
-  try {
-    const requestBody = {
-      model: OLLAMA_MODEL,
-      prompt: `System: ${systemPrompt}\n\nUser: ${userMessage}\n\nAssistant:`,
-      stream: false,
-      options: {
+  // Try OpenAI first (if API key provided)
+  if (OPENAI_API_KEY) {
+    try {
+      console.log('Using OpenAI...');
+      const response = await axios.post('https://api.openai.com/v1/chat/completions', {
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userMessage }
+        ],
         temperature: 0.7
-      }
-    };
-    
-    console.log('Calling Ollama:', OLLAMA_URL);
-    
-    const response = await axios.post(`${OLLAMA_URL}/api/generate`, requestBody, {
-      timeout: 180000,
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'User-Agent': 'Mozilla/5.0 (compatible; QA-Agent/1.0)'
-      },
-      validateStatus: () => true
-    });
-
-    if (response.status !== 200) {
-      console.error('Ollama error:', response.status, response.data);
-      return "AI temporarily unavailable. Please try again.";
+      }, {
+        headers: {
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 30000
+      });
+      return response.data.choices[0].message.content;
+    } catch (err) {
+      console.error('OpenAI error:', err.message);
     }
-    
-    console.log('Ollama response received');
-    
-    return response.data?.response || response.data?.message?.content || "Got empty response from AI";
-  } catch (err) {
-    console.error('Ollama error:', err.message);
-    throw new Error('Failed to get response from AI');
   }
+
+  // Try Claude (if API key provided)
+  if (CLAUDE_API_KEY) {
+    try {
+      console.log('Using Claude...');
+      const response = await axios.post('https://api.anthropic.com/v1/messages', {
+        model: 'claude-3-haiku-20240307',
+        max_tokens: 1024,
+        system: systemPrompt,
+        messages: [
+          { role: 'user', content: userMessage }
+        ]
+      }, {
+        headers: {
+          'x-api-key': CLAUDE_API_KEY,
+          'Content-Type': 'application/json',
+          'anthropic-version': '2023-06-01'
+        },
+        timeout: 30000
+      });
+      return response.data.content[0].text;
+    } catch (err) {
+      console.error('Claude error:', err.message);
+    }
+  }
+
+  // Try Ollama (fallback)
+  if (OLLAMA_URL && OLLAMA_URL !== 'http://localhost:11434') {
+    try {
+      console.log('Using Ollama:', OLLAMA_URL);
+      const response = await axios.post(`${OLLAMA_URL}/api/generate`, {
+        model: OLLAMA_MODEL,
+        prompt: `System: ${systemPrompt}\n\nUser: ${userMessage}\n\nAssistant:`,
+        stream: false
+      }, {
+        timeout: 60000,
+        headers: { 'Content-Type': 'application/json' }
+      });
+      return response.data.response;
+    } catch (err) {
+      console.error('Ollama error:', err.message);
+    }
+  }
+
+  // Demo mode
+  return "Configure an AI: add OLLAMA_URL, OPENAI_API_KEY, or CLAUDE_API_KEY to environment.";
+
 }
 
 app.get('/', (req, res) => {
   res.json({
     status: 'running',
-    model: OLLAMA_MODEL,
-    slack: SLACK_BOT_TOKEN ? 'configured' : 'not configured',
+    ai: {
+      openai: !!OPENAI_API_KEY,
+      claude: !!CLAUDE_API_KEY,
+      ollama: !!OLLAMA_URL
+    },
     endpoints: {
       health: 'GET /health',
       chat: 'POST /webhook',
-      slack: 'POST /slack (for Slack Events)'
+      slack: 'POST /slack'
     }
   });
 });
@@ -109,7 +144,6 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Slack verification endpoint (GET for URL verification)
 app.get('/slack', (req, res) => {
   res.status(200).send('OK');
 });
@@ -124,7 +158,7 @@ app.post('/webhook', async (req, res) => {
     }
 
     console.log(`Processing: "${userMessage}"`);
-    const response = await queryOllama(userMessage);
+    const response = await queryAI(userMessage);
     
     res.json({ response });
   } catch (err) {
@@ -137,15 +171,11 @@ app.post('/slack', async (req, res) => {
   try {
     const { challenge, type, token } = req.body;
     
-    // Slack URL verification (required for Event Subscriptions)
     if (type === 'url_verification') {
-      console.log('Slack URL verification challenge:', challenge);
       return res.json({ challenge });
     }
 
-    // Check if from Slack (verify token if set)
     if (process.env.SLACK_VERIFICATION_TOKEN && token !== process.env.SLACK_VERIFICATION_TOKEN) {
-      console.log('Invalid token, ignoring');
       return res.status(200).send();
     }
 
@@ -160,13 +190,11 @@ app.post('/slack', async (req, res) => {
     
     console.log(`Slack message: "${userMessage}" (thread: ${threadTs})`);
     
-    // Only respond to mentions
     if (!userMessage.includes('Analyst') && !userMessage.includes('@')) {
-      console.log('Not mentioning bot, ignoring');
       return res.status(200).send();
     }
     
-    const response = await queryOllama(userMessage);
+    const response = await queryAI(userMessage);
     
     if (SLACK_BOT_TOKEN) {
       await axios.post('https://slack.com/api/chat.postMessage', {
@@ -180,8 +208,6 @@ app.post('/slack', async (req, res) => {
         }
       });
       console.log('✓ Replied in thread');
-    } else {
-      console.log('⚠ No SLACK_BOT_TOKEN configured - cannot reply in thread');
     }
 
     res.status(200).send();
@@ -195,8 +221,7 @@ loadMockData();
 
 app.listen(PORT, () => {
   console.log(`🚀 QA Agent running on http://localhost:${PORT}`);
-  console.log(`   Model: ${OLLAMA_MODEL}`);
-  console.log(`   Slack: ${SLACK_BOT_TOKEN ? 'configured' : 'NOT configured'}`);
+  console.log(`   AI: ${OPENAI_API_KEY ? 'OpenAI' : CLAUDE_API_KEY ? 'Claude' : OLLAMA_URL ? 'Ollama' : 'Demo'}`);
   console.log(`   Endpoints: /webhook, /slack`);
 });
 
