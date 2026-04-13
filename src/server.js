@@ -113,12 +113,18 @@ app.post('/webhook', async (req, res) => {
 
 app.post('/slack', async (req, res) => {
   try {
-    const { challenge, type } = req.body;
+    const { challenge, type, token } = req.body;
     
     // Slack URL verification (required for Event Subscriptions)
     if (type === 'url_verification') {
       console.log('Slack URL verification challenge:', challenge);
       return res.json({ challenge });
+    }
+
+    // Check if from Slack (verify token if set)
+    if (process.env.SLACK_VERIFICATION_TOKEN && token !== process.env.SLACK_VERIFICATION_TOKEN) {
+      console.log('Invalid token, ignoring');
+      return res.status(200).send();
     }
 
     const { event } = req.body;
@@ -131,6 +137,12 @@ app.post('/slack', async (req, res) => {
     const threadTs = event.thread_ts || event.ts;
     
     console.log(`Slack message: "${userMessage}" (thread: ${threadTs})`);
+    
+    // Only respond to mentions
+    if (!userMessage.includes('Analyst') && !userMessage.includes('@')) {
+      console.log('Not mentioning bot, ignoring');
+      return res.status(200).send();
+    }
     
     const response = await queryOllama(userMessage);
     
