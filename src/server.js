@@ -15,7 +15,7 @@ const PORT = process.env.PORT || 3000;
 const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN;
 
 // AI Configuration
-const OLLAMA_URL = process.env.OLLAMA_URL;
+const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen3:8b';
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY;
@@ -101,8 +101,8 @@ Instructions:
     }
   }
 
-  // Try Ollama (fallback)
-  if (OLLAMA_URL && OLLAMA_URL !== 'http://localhost:11434') {
+  // Try Ollama (fallback) - use if OLLAMA_URL configured (including localhost)
+  if (OLLAMA_URL) {
     try {
       console.log('Using Ollama:', OLLAMA_URL);
       const response = await axios.post(`${OLLAMA_URL}/api/generate`, {
