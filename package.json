@@ -1,0 +1,17 @@
+{
+  "name": "qa-agent",
+  "version": "1.0.0",
+  "description": "AI QA Agent with Ollama and Slack integration",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "axios": "^1.15.0",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.1",
+    "localtunnel": "^2.0.2"
+  }
+}

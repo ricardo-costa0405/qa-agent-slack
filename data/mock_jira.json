@@ -1,0 +1,59 @@
+{
+  "issues": [
+    {
+      "key": "QA-101",
+      "summary": "Login button not working on Safari mobile",
+      "description": "Users report the login button is unresponsive on Safari iOS. Steps to reproduce: 1) Open app in Safari 2) Click login button 3) Nothing happens.",
+      "priority": "High",
+      "status": "In Progress",
+      "assignee": "John Doe",
+      "reporter": "Jane Smith",
+      "created": "2025-04-01",
+      "labels": ["mobile", "safari", "login"]
+    },
+    {
+      "key": "QA-102",
+      "summary": "Payment timeout error after 30 seconds",
+      "description": "Payment processing times out after 30 seconds even when payment is successful. Users see 'Payment Failed' but money is deducted.",
+      "priority": "Critical",
+      "status": "Open",
+      "assignee": "Jane Smith",
+      "reporter": "Mike Johnson",
+      "created": "2025-04-05",
+      "labels": ["payments", "timeout", "critical"]
+    },
+    {
+      "key": "QA-103",
+      "summary": "Dashboard not loading for admin users",
+      "description": "Admin users see a blank dashboard. Regular users can see it fine.",
+      "priority": "High",
+      "status": "Resolved",
+      "assignee": "Alex Chen",
+      "reporter": "Sarah Wilson",
+      "created": "2025-04-02",
+      "labels": ["dashboard", "admin", "frontend"]
+    },
+    {
+      "key": "QA-104",
+      "summary": "Email notifications not being sent",
+      "description": "Users are not receiving email notifications for password resets and order confirmations.",
+      "priority": "Medium",
+      "status": "In Progress",
+      "assignee": "Tom Brown",
+      "reporter": "Support Team",
+      "created": "2025-04-08",
+      "labels": ["email", "notifications"]
+    },
+    {
+      "key": "QA-105",
+      "summary": "Search results not filtering correctly",
+      "description": "When filtering by date, results show items outside the selected range.",
+      "priority": "Medium",
+      "status": "Open",
+      "assignee": "Unassigned",
+      "reporter": "Product Team",
+      "created": "2025-04-10",
+      "labels": ["search", "filter", "backend"]
+    }
+  ]
+}

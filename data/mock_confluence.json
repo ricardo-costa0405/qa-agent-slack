@@ -1,0 +1,28 @@
+{
+  "pages": [
+    {
+      "title": "QA Testing Guidelines",
+      "content": "Our QA process involves three levels of testing:\n\n1. Unit Tests - Written by developers, test individual functions and methods\n2. Integration Tests - Test how components work together\n3. E2E Tests - Written in Playwright, simulate real user workflows\n\nAll tests must pass before merging to main branch. Critical bugs block releases.",
+      "lastUpdated": "2025-03-15",
+      "author": "QA Lead"
+    },
+    {
+      "title": "Bug Reporting Process",
+      "content": "When reporting bugs in Jira, include:\n- Title: Clear description of the issue\n- Steps to reproduce: Numbered list of actions\n- Expected result: What should happen\n- Actual result: What actually happened\n- Screenshots: Evidence of the issue\n- Environment: Browser, OS, app version\n\nPriority levels: Critical, High, Medium, Low",
+      "lastUpdated": "2025-03-20",
+      "author": "QA Lead"
+    },
+    {
+      "title": "Release Checklist",
+      "content": "Before each release:\n1. All automated tests passing\n2. Manual regression testing complete\n3. Performance benchmarks met\n4. Security scan completed\n5. Product sign-off received\n6. Release notes drafted\n\nRollback plan must be documented.",
+      "lastUpdated": "2025-04-01",
+      "author": "Release Manager"
+    },
+    {
+      "title": "API Documentation Standards",
+      "content": "All APIs must include:\n- Endpoint URL and method\n- Request/response schemas\n- Authentication requirements\n- Error codes and messages\n- Rate limits\n\nUse OpenAPI 3.0 specification.",
+      "lastUpdated": "2025-02-28",
+      "author": "Tech Lead"
+    }
+  ]
+}
