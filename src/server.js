@@ -57,17 +57,23 @@ Instructions:
 - Reference issue keys (QA-XXX) when relevant`;
 
   try {
-    const response = await axios.post(`${OLLAMA_URL}/api/generate`, {
+    const requestBody = {
       model: OLLAMA_MODEL,
       prompt: `System: ${systemPrompt}\n\nUser: ${userMessage}\n\nAssistant:`,
       stream: false
-    }, {
+    };
+    
+    console.log('Calling Ollama:', OLLAMA_URL, 'with model:', OLLAMA_MODEL);
+    
+    const response = await axios.post(`${OLLAMA_URL}/api/generate`, requestBody, {
       timeout: 180000
     });
 
-    return response.data.response;
+    console.log('Ollama response keys:', Object.keys(response.data || {}));
+    
+    return response.data?.response || response.data?.message?.content || "Got empty response from AI";
   } catch (err) {
-    console.error('Ollama error:', err.message);
+    console.error('Ollama error:', err.message, err.response?.data);
     throw new Error('Failed to get response from AI');
   }
 }
