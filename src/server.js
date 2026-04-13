@@ -81,6 +81,11 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Slack verification endpoint (GET for URL verification)
+app.get('/slack', (req, res) => {
+  res.status(200).send('OK');
+});
+
 app.post('/webhook', async (req, res) => {
   try {
     const { message, text } = req.body;
@@ -104,7 +109,9 @@ app.post('/slack', async (req, res) => {
   try {
     const { challenge, type } = req.body;
     
+    // Slack URL verification (required for Event Subscriptions)
     if (type === 'url_verification') {
+      console.log('Slack URL verification challenge:', challenge);
       return res.json({ challenge });
     }
 
